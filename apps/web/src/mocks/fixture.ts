@@ -1,4 +1,4 @@
-import type { DisciplineResponse } from '@joj/shared';
+import type { DisciplineResponse, SlotResponse } from '@joj/shared';
 
 /**
  * Les données de la fausse API, en mémoire. Les handlers les lisent et les modifient comme la
@@ -22,8 +22,9 @@ export const natation: DisciplineResponse = {
 /** Un identifiant au bon format qu'aucune discipline ne porte. */
 export const UNKNOWN_ID = '0199f5c2-0000-7000-8000-00000000ffff';
 
-const initial = (): { disciplines: DisciplineResponse[] } => ({
+const initial = (): { disciplines: DisciplineResponse[]; slots: SlotResponse[] } => ({
   disciplines: [{ ...lutte }, { ...natation }],
+  slots: [],
 });
 
 export const fixture = initial();

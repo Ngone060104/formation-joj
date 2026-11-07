@@ -1,7 +1,12 @@
 import {
   createDisciplineSchema,
+  createRegistrationSchema,
+  createSlotSchema,
   type DisciplineResponse,
   type ProblemDetails,
+  type RegistrationResponse,
+  slotIdParamsSchema,
+  type SlotResponse,
   updateDisciplineSchema,
 } from '@joj/shared';
 import { delay, http, HttpResponse } from 'msw';
@@ -62,6 +67,12 @@ const nameTaken = (name: string) =>
     details: { name },
   });
 
+const slotNotFound = (id: string) =>
+  problem(404, 'SLOT_NOT_FOUND', `No slot with id ${id}`, { details: { id } });
+
+const slotFull = (id: string) =>
+  problem(409, 'SLOT_FULL', `Slot ${id} has no place left`, { details: { id } });
+
 const byName = (a: DisciplineResponse, b: DisciplineResponse) =>
   a.name < b.name ? -1 : a.name > b.name ? 1 : 0;
 
@@ -121,6 +132,47 @@ export const handlers = [
     const id = String(params['id']);
     if (!findDiscipline(id)) return notFound(id);
     fixture.disciplines = fixture.disciplines.filter((d) => d.id !== id);
+    // Comme la clé étrangère en base : les créneaux disparaissent avec leur discipline.
+    fixture.slots = fixture.slots.filter((slot) => slot.disciplineId !== id);
     return new HttpResponse(null, { status: 204 });
+  }),
+
+  http.post('*/api/slots', async ({ request }) => {
+    const failure = await gate('POST', '/api/slots');
+    if (failure) return failure;
+    const parsed = createSlotSchema.safeParse(await request.json());
+    if (!parsed.success) return validationFailed(parsed.error);
+    if (!findDiscipline(parsed.data.disciplineId)) return notFound(parsed.data.disciplineId);
+    const created: SlotResponse = {
+      ...parsed.data,
+      id: crypto.randomUUID(),
+      remainingPlaces: parsed.data.capacity,
+      createdAt: new Date().toISOString(),
+    };
+    fixture.slots.push(created);
+    return HttpResponse.json(created, { status: 201 });
+  }),
+
+  http.post('*/api/slots/:id/registrations', async ({ params, request }) => {
+    const failure = await gate('POST', '/api/slots/:id/registrations');
+    if (failure) return failure;
+    const parsedParams = slotIdParamsSchema.safeParse(params);
+    if (!parsedParams.success) return validationFailed(parsedParams.error);
+    const parsed = createRegistrationSchema.safeParse(await request.json());
+    if (!parsed.success) return validationFailed(parsed.error);
+    const { id } = parsedParams.data;
+    const slot = fixture.slots.find((candidate) => candidate.id === id);
+    if (!slot) return slotNotFound(id);
+    if (slot.remainingPlaces <= 0) return slotFull(id);
+    const updated = { ...slot, remainingPlaces: slot.remainingPlaces - 1 };
+    fixture.slots = fixture.slots.map((candidate) => (candidate.id === id ? updated : candidate));
+    const created: RegistrationResponse = {
+      ...parsed.data,
+      id: crypto.randomUUID(),
+      slotId: id,
+      remainingPlaces: updated.remainingPlaces,
+      createdAt: new Date().toISOString(),
+    };
+    return HttpResponse.json(created, { status: 201 });
   }),
 ];

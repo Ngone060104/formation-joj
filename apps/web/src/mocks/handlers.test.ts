@@ -2,6 +2,7 @@
  * La fausse API tient le même contrat que apps/api : si elle s'en écarte, les tests du front
  * passent contre une API qui n'existe pas. Ces tests l'appellent avec `fetch`, sans React.
  */
+import { registrationSchema, slotSchema } from '@joj/shared';
 import { describe, expect, it } from 'vitest';
 import { mockControl } from './control';
 import { lutte, natation, UNKNOWN_ID } from './fixture';
@@ -95,6 +96,92 @@ describe('mock disciplines API', () => {
       expect(await response.json()).toMatchObject({ code: 'DISCIPLINE_NOT_FOUND' });
     },
   );
+});
+
+describe('mock slots API', () => {
+  const awa = { name: 'Awa Diop', email: 'awa@example.org' };
+
+  const openSlot = (capacity: number, disciplineId = lutte.id) =>
+    call('/api/slots', {
+      method: 'POST',
+      body: json({
+        disciplineId,
+        startsAt: '2026-11-01T09:00:00.000Z',
+        endsAt: '2026-11-01T12:00:00.000Z',
+        capacity,
+      }),
+    });
+
+  const register = (slotId: string, body: unknown = awa) =>
+    call(`/api/slots/${slotId}/registrations`, { method: 'POST', body: json(body) });
+
+  const openedSlotId = async (capacity: number) =>
+    ((await (await openSlot(capacity)).json()) as { id: string }).id;
+
+  it('001-AS1: opens a slot with all its places remaining', async () => {
+    const response = await openSlot(2);
+
+    expect(response.status).toBe(201);
+    expect(slotSchema.parse(await response.json())).toMatchObject({
+      disciplineId: lutte.id,
+      capacity: 2,
+      remainingPlaces: 2,
+    });
+  });
+
+  it('001-AS2: refuses a slot for an unknown discipline with a 404 problem', async () => {
+    const response = await openSlot(2, UNKNOWN_ID);
+
+    expect(response.status).toBe(404);
+    expect(await response.json()).toMatchObject({ code: 'DISCIPLINE_NOT_FOUND' });
+  });
+
+  it('001-AS3: rejects a capacity of 0 with a 400 VALIDATION_FAILED problem', async () => {
+    const response = await openSlot(0);
+
+    expect(response.status).toBe(400);
+    expect(await response.json()).toMatchObject({ code: 'VALIDATION_FAILED' });
+  });
+
+  it('001-AS5: registers a volunteer and leaves one place', async () => {
+    const slotId = await openedSlotId(2);
+
+    const response = await register(slotId);
+
+    expect(response.status).toBe(201);
+    expect(registrationSchema.parse(await response.json())).toMatchObject({
+      slotId,
+      ...awa,
+      remainingPlaces: 1,
+    });
+  });
+
+  it('001-AS7: rejects a full slot with a 409 SLOT_FULL problem', async () => {
+    const slotId = await openedSlotId(1);
+    await register(slotId);
+
+    const response = await register(slotId);
+
+    expect(response.status).toBe(409);
+    expect(await response.json()).toMatchObject({ code: 'SLOT_FULL', details: { id: slotId } });
+  });
+
+  it('001-AS9: refuses an unknown slot with a 404 SLOT_NOT_FOUND problem', async () => {
+    const response = await register(UNKNOWN_ID);
+
+    expect(response.status).toBe(404);
+    expect(await response.json()).toMatchObject({ code: 'SLOT_NOT_FOUND' });
+  });
+
+  it('001-AS10: rejects a malformed email and keeps the place free', async () => {
+    const slotId = await openedSlotId(1);
+
+    const response = await register(slotId, { ...awa, email: 'awa' });
+
+    expect(response.status).toBe(400);
+    expect(await response.json()).toMatchObject({ code: 'VALIDATION_FAILED' });
+    expect((await register(slotId)).status).toBe(201);
+  });
 });
 
 describe('mockControl', () => {
