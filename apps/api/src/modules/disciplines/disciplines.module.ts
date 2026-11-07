@@ -19,5 +19,7 @@ import { DrizzleDisciplineRepository } from './infra/drizzle-discipline.reposito
     UpdateDiscipline,
     DeleteDiscipline,
   ],
+  // Le module Volunteers vérifie qu'une discipline existe avant d'ouvrir un créneau.
+  exports: [GetDiscipline],
 })
 export class DisciplinesModule {}

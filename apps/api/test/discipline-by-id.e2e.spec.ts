@@ -83,6 +83,28 @@ describe('/api/disciplines/:id (e2e)', () => {
     expect(list.body).not.toContainEqual(expect.objectContaining({ id: lutte.id }));
   });
 
+  it('000-AS10: still deletes a discipline that has slots (204)', async () => {
+    const slot = await api()
+      .post('/api/slots')
+      .send({
+        disciplineId: lutte.id,
+        startsAt: '2026-11-01T09:00:00.000Z',
+        endsAt: '2026-11-01T12:00:00.000Z',
+        capacity: 2,
+      })
+      .expect(201);
+
+    await api().delete(`/api/disciplines/${lutte.id}`).expect(204);
+
+    await api().get(`/api/disciplines/${lutte.id}`).expect(404);
+    // Le créneau disparaît avec sa discipline : on ne peut plus s'y inscrire.
+    const response = await api()
+      .post(`/api/slots/${slot.body.id}/registrations`)
+      .send({ name: 'Awa Diop', email: 'awa@example.org' })
+      .expect(404);
+    expect(response.body).toMatchObject({ code: 'SLOT_NOT_FOUND' });
+  });
+
   it.each([
     ['GET', () => api().get(`/api/disciplines/${UNKNOWN_ID}`)],
     ['PATCH', () => api().patch(`/api/disciplines/${UNKNOWN_ID}`).send({ name: 'Judo' })],
