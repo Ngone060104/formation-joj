@@ -3,12 +3,17 @@ import { z } from 'zod';
 export const SLOT_CAPACITY_MIN = 1;
 export const VOLUNTEER_NAME_MAX_LENGTH = 100;
 
+/** Une date que la base sait stocker : Postgres refuse l'an 0000, avec une erreur 500 sinon. */
+const slotDateSchema = z.iso.datetime().refine((value) => new Date(value).getUTCFullYear() >= 1, {
+  message: 'The date is too far in the past',
+});
+
 /** Corps de `POST /api/slots`. Le domaine revérifie la capacité et l'ordre des dates. */
 export const createSlotSchema = z
   .object({
     disciplineId: z.uuid(),
-    startsAt: z.iso.datetime(),
-    endsAt: z.iso.datetime(),
+    startsAt: slotDateSchema,
+    endsAt: slotDateSchema,
     // 32 bits : au-delà, la colonne `capacity` refuserait la valeur avec une erreur 500.
     capacity: z.int32().min(SLOT_CAPACITY_MIN),
   })

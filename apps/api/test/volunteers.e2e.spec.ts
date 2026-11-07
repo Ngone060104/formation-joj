@@ -58,6 +58,16 @@ describe('/api/slots (e2e)', () => {
     });
   });
 
+  it('001-AS1: rejects a date the database cannot store (400)', async () => {
+    const response = await api()
+      .post('/api/slots')
+      .send({ ...validSlot(), startsAt: '0000-01-01T00:00:00.000Z' })
+      .expect(400);
+
+    expect(response.body).toMatchObject({ status: 400, code: 'VALIDATION_FAILED' });
+    expect(response.body.errors).toEqual([expect.objectContaining({ path: 'startsAt' })]);
+  });
+
   it('001-AS2: refuses a slot for an unknown discipline (404)', async () => {
     const response = await api()
       .post('/api/slots')

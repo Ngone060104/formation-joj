@@ -40,6 +40,22 @@ describe('createSlotSchema', () => {
   });
 });
 
+describe('createSlotSchema dates', () => {
+  it('001-AS1: rejects a date the database cannot store', () => {
+    const result = createSlotSchema.safeParse({
+      ...validSlot,
+      startsAt: '0000-01-01T00:00:00.000Z',
+    });
+    expect(result.success).toBe(false);
+    expect(issuePaths(result)).toEqual(['startsAt']);
+  });
+
+  it('001-AS1: accepts the first year the database can store', () => {
+    const startsAt = '0001-01-01T00:00:00.000Z';
+    expect(createSlotSchema.safeParse({ ...validSlot, startsAt }).success).toBe(true);
+  });
+});
+
 describe('createRegistrationSchema', () => {
   it('001-AS10: rejects a name that is empty, blank or too long', () => {
     for (const name of ['', '   ', 'a'.repeat(VOLUNTEER_NAME_MAX_LENGTH + 1)]) {
