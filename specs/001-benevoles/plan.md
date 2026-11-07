@@ -126,3 +126,13 @@ Six tâches, dans l'ordre des couches. Chaque tâche nomme le test à écrire d'
 - [x] T04 [001-AS7, AS8, AS9] Écrire d'abord `infra/drizzle-slot.repository.int.spec.ts` (« 001-AS8: accepts only one of two simultaneous registrations »), puis `infra/volunteers.schema.ts`, la migration générée, les mappers et `DrizzleSlotRepository`
 - [x] T05 [001-AS1, AS2, AS3, AS4, AS5, AS6, AS7, AS8, AS9, AS10] Écrire d'abord `apps/api/test/volunteers.e2e.spec.ts` (« 001-AS7: rejects a registration on a full slot (409) »), puis `http/slots.controller.ts`, `volunteers.module.ts`, l'export de `GetDiscipline` et l'import dans `app.module.ts`
 - [x] T06 [001-AS1, AS2, AS5, AS7, AS9] Écrire d'abord les cas de `apps/web/src/mocks/handlers.test.ts` (« 001-AS7: rejects a full slot with a 409 SLOT_FULL problem »), puis les deux routes dans `handlers.ts` et les créneaux dans `fixture.ts`
+
+## 7. Corrections
+
+### Passage 1
+
+Ces tâches viennent de la relecture indépendante. Les deux refus en `500` ont été reproduits par le relecteur sur l'application complète.
+
+- [ ] T07 [001-AS3, AS4] Écrire d'abord dans `application/volunteers.application.spec.ts` les cas « 001-AS3: refuses an invalid capacity, and saves nothing » et « 001-AS4: refuses an end not after the start, and saves nothing », qui appellent `OpenSlot.execute()` puis vérifient que `savedSlots()` est vide. Preuve : le « Alors » n'est pas vérifié, `volunteers.application.spec.ts` n'a aucun test AS3 ni AS4, et `apps/api/test/volunteers.e2e.spec.ts:71-96` ne vérifie que le refus
+- [ ] T08 [001-AS10] Écrire d'abord dans `packages/shared/src/volunteers.spec.ts`, `domain/registration.spec.ts` et `apps/api/test/volunteers.e2e.spec.ts` le cas « 001-AS10: rejects a name containing a NUL character », puis refuser ce caractère dans `createRegistrationSchema` et dans `Registration.create()`. Preuve : le nom `"Awa\u0000Diop"` renvoie `500 INTERNAL_ERROR` au lieu de `400` (`packages/shared/src/volunteers.ts:41`, `domain/registration.ts:61-73`)
+- [ ] T09 [001-AS1] Écrire d'abord dans `packages/shared/src/volunteers.spec.ts` et `apps/api/test/volunteers.e2e.spec.ts` le cas « 001-AS1: rejects a date the database cannot store (400) », puis refuser l'an 0000 dans `createSlotSchema`. Preuve : `startsAt: "0000-01-01T00:00:00.000Z"` renvoie `500 INTERNAL_ERROR` au lieu de `400` (`packages/shared/src/volunteers.ts:10-11`)
