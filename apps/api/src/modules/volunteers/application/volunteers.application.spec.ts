@@ -56,6 +56,30 @@ describe('volunteers (application layer)', () => {
     expect(slots.savedSlots()).toEqual([]);
   });
 
+  it.each([0, -1, 1.5])(
+    '001-AS3: refuses an invalid capacity of %d, and saves nothing',
+    async (capacity) => {
+      const { openSlot, slotInput, slots } = await setup();
+
+      await expect(openSlot.execute({ ...slotInput, capacity })).rejects.toMatchObject({
+        code: 'SLOT_CAPACITY_INVALID',
+      });
+      expect(slots.savedSlots()).toEqual([]);
+    },
+  );
+
+  it.each(['2026-11-01T08:00:00.000Z', '2026-11-01T09:00:00.000Z'])(
+    '001-AS4: refuses an end at %s, not after the start, and saves nothing',
+    async (endsAt) => {
+      const { openSlot, slotInput, slots } = await setup();
+
+      await expect(openSlot.execute({ ...slotInput, endsAt })).rejects.toMatchObject({
+        code: 'SLOT_END_NOT_AFTER_START',
+      });
+      expect(slots.savedSlots()).toEqual([]);
+    },
+  );
+
   it('001-AS5: registers a volunteer and leaves one place', async () => {
     const { openSlot, registerVolunteer, slotInput, slots } = await setup();
     const slot = await openSlot.execute(slotInput);
