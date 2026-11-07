@@ -38,6 +38,12 @@ describe('Registration', () => {
     );
   });
 
+  it('001-AS10: rejects a name containing a NUL character', () => {
+    expect(() => newRegistration({ name: `Awa${String.fromCharCode(0)}Diop` })).toThrowError(
+      expect.objectContaining({ code: 'VOLUNTEER_NAME_INVALID', kind: 'VALIDATION' }),
+    );
+  });
+
   it('001-AS10: rejects a malformed email', () => {
     expect(() => newRegistration({ email: 'awa' })).toThrowError(
       expect.objectContaining({ code: 'VOLUNTEER_EMAIL_INVALID', kind: 'VALIDATION' }),

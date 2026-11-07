@@ -36,9 +36,17 @@ export type SlotResponse = z.infer<typeof slotSchema>;
 /** Partagé avec le domaine : l'API et l'entité appliquent la même règle. */
 export const volunteerEmailSchema = z.email();
 
+/** Faux pour un texte que Postgres ne peut pas stocker : il refuse le caractère NUL. */
+export const isStorableText = (text: string): boolean => !text.includes(String.fromCharCode(0));
+
 /** Corps de `POST /api/slots/:id/registrations`. */
 export const createRegistrationSchema = z.object({
-  name: z.string().trim().min(1).max(VOLUNTEER_NAME_MAX_LENGTH),
+  name: z
+    .string()
+    .trim()
+    .min(1)
+    .max(VOLUNTEER_NAME_MAX_LENGTH)
+    .refine(isStorableText, { message: 'The name contains a forbidden character' }),
   email: volunteerEmailSchema,
 });
 export type CreateRegistrationInput = z.infer<typeof createRegistrationSchema>;

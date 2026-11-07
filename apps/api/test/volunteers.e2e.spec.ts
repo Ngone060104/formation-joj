@@ -148,6 +148,11 @@ describe('/api/slots (e2e)', () => {
   it.each([
     ['an empty name', { ...awa, name: '' }, 'name'],
     ['a blank name', { ...awa, name: '   ' }, 'name'],
+    [
+      'a name containing a NUL character',
+      { ...awa, name: `Awa${String.fromCharCode(0)}Diop` },
+      'name',
+    ],
     ['a malformed email', { ...awa, email: 'awa' }, 'email'],
   ])('001-AS10: rejects %s (400), and the place stays free', async (_label, volunteer, path) => {
     const slot = await openSlot();

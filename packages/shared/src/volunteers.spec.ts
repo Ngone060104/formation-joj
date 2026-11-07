@@ -49,6 +49,15 @@ describe('createRegistrationSchema', () => {
     }
   });
 
+  it('001-AS10: rejects a name containing a NUL character', () => {
+    const result = createRegistrationSchema.safeParse({
+      ...validRegistration,
+      name: `Awa${String.fromCharCode(0)}Diop`,
+    });
+    expect(result.success).toBe(false);
+    expect(issuePaths(result)).toEqual(['name']);
+  });
+
   it('001-AS10: rejects a malformed email', () => {
     const result = createRegistrationSchema.safeParse({ ...validRegistration, email: 'awa' });
     expect(result.success).toBe(false);

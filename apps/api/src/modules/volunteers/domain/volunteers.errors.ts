@@ -9,6 +9,8 @@ const VOLUNTEER_ERROR_KINDS = {
   /** Nom vide, ou fait seulement d'espaces. */
   VOLUNTEER_NAME_REQUIRED: 'VALIDATION',
   VOLUNTEER_NAME_TOO_LONG: 'VALIDATION',
+  /** Le nom contient un caractère impossible à stocker. */
+  VOLUNTEER_NAME_INVALID: 'VALIDATION',
   VOLUNTEER_EMAIL_INVALID: 'VALIDATION',
   /** Aucun créneau n'a cet identifiant. */
   SLOT_NOT_FOUND: 'NOT_FOUND',
