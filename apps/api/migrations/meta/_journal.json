@@ -8,6 +8,13 @@
       "when": 1793025380125,
       "tag": "0000_create_disciplines",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1794062659892,
+      "tag": "0001_create_volunteers",
+      "breakpoints": true
     }
   ]
 }
